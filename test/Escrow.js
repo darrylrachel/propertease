@@ -11,20 +11,31 @@ describe('Escrow', () => {
 
     beforeEach(async () => {
         // Setup accounts
-            [buyer, seller, inspector, lender] = await ethers.getSigners()
-        
-            
-            // Deploy Real Estate, Escrow
-            const RealEstate = await ethers.getContractFactory('RealEstate')
-            realEstate = await RealEstate.deploy()
+        [buyer, seller, inspector, lender] = await ethers.getSigners()
+    
+        // Deploy Real Estate, Escrow
+        const RealEstate = await ethers.getContractFactory('RealEstate')
+        realEstate = await RealEstate.deploy()
 
-            const Escrow = await ethers.getContractFactory('Escrow')
-            escrow = await Escrow.deploy(
-                realEstate.address,
-                seller.address,
-                inspector.address,
-                lender.address
-            )
+        const Escrow = await ethers.getContractFactory('Escrow')
+        escrow = await Escrow.deploy(
+            realEstate.address,
+            seller.address,
+            inspector.address,
+            lender.address
+        )
+
+        // Mint Real Estate, Escrow
+        let transaction = await realEstate.connect(seller).mint("https://github.com/dappuniversity/millow/blob/master/metadata/1.json");
+        await transaction.wait()
+
+        // Approve property
+        transaction = await realEstate.connect(seller).approve(escrow.address, 1)
+        await transaction.wait()
+
+        // List property
+        transaction = await escrow.connect(seller).list(1, tokens(10), buyer.address, tokens(5))
+        await transaction.wait()
     })
 
     describe('Deployment', () => {
@@ -48,14 +59,38 @@ describe('Escrow', () => {
             const result = await escrow.inspector()
             expect(result).to.be.equal(inspector.address)
         })
+    })
 
+    
+
+    describe('Listing', () => {
+
+        it('Updates as listed', async () => {
+            const result = await escrow.isListed(1)
+            expect(result).to.be.equal(true)
+        })
+
+        it('Updates ownership', async () => {
+            expect(await realEstate.ownerOf(1)).to.be.equal(escrow.address)
+        })
+
+        it('Returns the buyer', async () => {
+            const result = await escrow.buyer(1)
+            expect(result).to.be.equal(buyer.address)
+        })
+
+        it('Returns the escrow amount', async () => {
+            const result = await escrow.escrowAmount(1)
+            expect(result).to.be.equal(tokens(5))
+        })
+
+        it('Returns the purchase price', async () => {
+            const result = await escrow.purchasePrice(1)
+            expect(result).to.be.equal(tokens(10))
+        })
         
     })
 
+
+
 })
-
-// Mint Real Estate, Escrow
-// let transaction = await realEstate.connect(seller).mint("https://github.com/dappuniversity/millow/blob/master/metadata/1.json");
-// await transaction.wait()
-
-// setup constructors that track the settings for the smart contract, setup tests
