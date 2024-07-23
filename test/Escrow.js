@@ -6,5 +6,56 @@ const tokens = (n) => {
 }
 
 describe('Escrow', () => {
+    let buyer, seller, inspector, lender
+    let realEstate, escrow
+
+    beforeEach(async () => {
+        // Setup accounts
+            [buyer, seller, inspector, lender] = await ethers.getSigners()
+        
+            
+            // Deploy Real Estate, Escrow
+            const RealEstate = await ethers.getContractFactory('RealEstate')
+            realEstate = await RealEstate.deploy()
+
+            const Escrow = await ethers.getContractFactory('Escrow')
+            escrow = await Escrow.deploy(
+                realEstate.address,
+                seller.address,
+                inspector.address,
+                lender.address
+            )
+    })
+
+    describe('Deployment', () => {
+
+        it('Returns NFT address', async () => {
+            const result = await escrow.nftAddress()
+            expect(result).to.be.equal(realEstate.address)
+        })
+
+        it('Returns the seller', async () => {
+            const result = await escrow.seller()
+            expect(result).to.be.equal(seller.address)
+        })
+
+        it('Returns the lender', async () => {
+            const result = await escrow.lender()
+            expect(result).to.be.equal(lender.address)
+        })
+
+        it('Returns the inspector', async () => {
+            const result = await escrow.inspector()
+            expect(result).to.be.equal(inspector.address)
+        })
+
+        
+    })
 
 })
+
+// Mint Real Estate, Escrow
+// let transaction = await realEstate.connect(seller).mint("https://github.com/dappuniversity/millow/blob/master/metadata/1.json");
+// await transaction.wait()
+
+// setup constructors that track the settings for the smart contract, setup tests
